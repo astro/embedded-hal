@@ -92,6 +92,61 @@ pub mod toggleable {
     }
 }
 
+/// Wraps an [OutputPin](trait.OutputPin.html) with a state cache to
+/// make it a readable
+/// [StatefulOutputPin](trait.StatefulOutputPin.html) and thus a
+/// [ToggleableOutputPin](trait.ToggleableOutputPin.html).
+#[cfg(feature = "unproven")]
+pub struct CachedOutputPin<P: OutputPin> {
+    state: bool,
+    pin: P,
+}
+
+#[cfg(feature = "unproven")]
+impl<P: OutputPin> CachedOutputPin<P> {
+    /// Wrap an output pin of which the current state cannot be read
+    /// by adding a cache field. An initial `state` must be provided.
+    pub fn new(pin: P, state: bool) -> Self {
+        CachedOutputPin { pin, state }
+    }
+
+    /// Unwrap into [OutputPin](trait.OutputPin.html).
+    pub fn into_inner(self) -> P {
+        self.pin
+    }
+}
+
+/// Set output state and cache it
+#[cfg(feature = "unproven")]
+impl<P: OutputPin> OutputPin for CachedOutputPin<P> {
+    fn set_high(&mut self) {
+        self.pin.set_high();
+        self.state = true;
+    }
+
+    fn set_low(&mut self) {
+        self.pin.set_low();
+        self.state = false;
+    }
+}
+
+/// Obtain cached state
+#[cfg(feature = "unproven")]
+impl<P: OutputPin> StatefulOutputPin for CachedOutputPin<P> {
+    fn is_set_low(&self) -> bool {
+        !self.state
+    }
+
+    fn is_set_high(&self) -> bool {
+        self.state
+    }
+}
+
+/// Toggleable by default
+#[cfg(feature = "unproven")]
+impl<P: OutputPin> toggleable::Default for CachedOutputPin<P> {}
+
+
 /// Single digital input pin
 #[cfg(feature = "unproven")]
 pub trait InputPin {
